@@ -1,6 +1,18 @@
 version: '3'
 services: 
+  db:
+    image: postgres:10.5-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: password
   server:
     build: .
+    links:
+      - db:db
     ports:
       - 8088:8088
+    environment:
+      DATABASE_URL: 'postgres://postgres:password@db:5432/postgres?sslmode=disable'
+      DATABASE_TIMEOUT_MS: 10000
+      DATA_DIRECTORY: '/go/src/github.com/startdusk/finance-app-backend'

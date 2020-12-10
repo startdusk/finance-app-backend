@@ -11,6 +11,7 @@ FROM alpine:3.10
 ENV DATA_DIRECTORY /go/src/github.com/startdusk/finance-app-backend
 RUN apk add --update --no-cache \ 
 	ca-certificates
+COPY ./internal/database/migrations ${DATA_DIRECTORY}/internal/database/migrations
 COPY --from=builder ${DATA_DIRECTORY}/server /finance-app-backend
 
 ENTRYPOINT ["/finance-app-backend"]

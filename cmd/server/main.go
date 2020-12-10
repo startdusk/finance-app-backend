@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+	"github.com/namsral/flag"
 	_ "github.com/lib/pq"
 
 	"github.com/startdusk/finance-app-backend/internal/api"
@@ -13,6 +14,8 @@ import (
 
 // Create Server object and listener
 func main() {
+	flag.Parse()
+
 	logrus.SetLevel(logrus.DebugLevel)
 	logrus.WithField("version", config.Version).Debug("Starting server.")
 

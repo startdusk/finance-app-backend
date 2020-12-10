@@ -2,6 +2,7 @@ package database
 
 import (
 	"time"
+	"database/sql"
 
 	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	databaseURL = flag.String("database-url", "postgres://postgres:password@localhost:5432/postgres?sslmode=disable", "Database URL")
+	databaseURL = flag.String("database-url", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "Database URL")
 	databaseTimeout = flag.Int64("database-timeout-ms", 2000, "")
 )
 
@@ -19,7 +20,7 @@ func Connect() (*sqlx.DB, error) {
 	// Connect to database
 	dbURL := *databaseURL
 
-	logrus.Debug("Connecting to database")
+	logrus.WithField("url", dbURL).Debug("Connecting to database")
 	conn, err := sqlx.Open("postgres", dbURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not connect to database")
@@ -28,8 +29,13 @@ func Connect() (*sqlx.DB, error) {
 	conn.SetMaxOpenConns(32)
 
 	// Check if database running
-	if err = waitForDB(conn); err != nil {
+	if err := waitForDB(conn.DB); err != nil {
 		return nil, err
+	}
+
+	// Migrate database schema
+	if err := migrateDB(conn.DB); err != nil {
+		return nil, errors.Wrap(err, "could not migrate database")
 	}
 
 	return conn, nil
@@ -49,11 +55,11 @@ func New() (Database, error) {
 }
 
 
-func waitForDB(conn *sqlx.DB) error {
+func waitForDB(conn *sql.DB) error {
 	ready := make(chan struct{})
 	go func() {
 		for {
-			if err := conn.Ping(); err != nil {
+			if err := conn.Ping(); err == nil {
 				close(ready)
 				return
 			}
@@ -61,10 +67,12 @@ func waitForDB(conn *sqlx.DB) error {
 		}
 	}()
 
-	select {
-	case <-ready:
-		return nil
-	case <-time.After(time.Duration(*databaseTimeout) * time.Millisecond):
-		return errors.New("database not ready")
+	for {
+		select {
+		case <-ready:
+			return nil
+		case <-time.After(time.Duration(*databaseTimeout) * time.Millisecond):
+			return errors.New("database not ready")
+		}
 	}
 }

@@ -1,17 +1,17 @@
 package database
 
 import (
-	"time"
 	"database/sql"
+	"time"
 
-	"github.com/sirupsen/logrus"
-	"github.com/pkg/errors"
-	"github.com/namsral/flag"
 	"github.com/jmoiron/sqlx"
+	"github.com/namsral/flag"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var (
-	databaseURL = flag.String("database-url", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "Database URL")
+	databaseURL     = flag.String("database-url", "postgres://postgres:password@db:5432/postgres?sslmode=disable", "Database URL")
 	databaseTimeout = flag.Int64("database-timeout-ms", 2000, "")
 )
 
@@ -20,10 +20,10 @@ func Connect() (*sqlx.DB, error) {
 	// Connect to database
 	dbURL := *databaseURL
 
-	logrus.WithField("url", dbURL).Debug("Connecting to database")
+	logrus.Debug("Connecting to database")
 	conn, err := sqlx.Open("postgres", dbURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not connect to database")
+		return nil, errors.Wrap(err, "could not connect to database")
 	}
 
 	conn.SetMaxOpenConns(32)
@@ -53,7 +53,6 @@ func New() (Database, error) {
 	}
 	return d, nil
 }
-
 
 func waitForDB(conn *sql.DB) error {
 	ready := make(chan struct{})

@@ -1,8 +1,8 @@
 package v1
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 
 	"github.com/sirupsen/logrus"
 

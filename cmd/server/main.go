@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-	"github.com/namsral/flag"
 	_ "github.com/lib/pq"
+	"github.com/namsral/flag"
+	"github.com/sirupsen/logrus"
 
 	"github.com/startdusk/finance-app-backend/internal/api"
 	"github.com/startdusk/finance-app-backend/internal/config"
@@ -30,10 +30,12 @@ func main() {
 		logrus.WithError(err).Fatal("Error building router")
 	}
 
+	logrus.Debug("Database is ready to use")
+
 	const addr = "0.0.0.0:8088"
 	server := http.Server{
 		Handler: router,
-		Addr: addr,
+		Addr:    addr,
 	}
 
 	// Starting server

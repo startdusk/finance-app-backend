@@ -6,8 +6,13 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// UniqueViolation Postgres error string for unique index violation(unique index violation: 唯一索引冲突)
+const UniqueViolation = "unique_violation"
+
 // Database - interface for database
 type Database interface {
+	UsersDB
+
 	io.Closer
 }
 

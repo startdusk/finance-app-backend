@@ -11,6 +11,7 @@ import (
 	"github.com/startdusk/finance-app-backend/internal/model"
 )
 
+// UserAPI - providers REST for users
 type UserAPI struct {
 	DB database.Database // will represent all database interface
 }
@@ -78,4 +79,41 @@ func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
 	logger.Info("user created")
 
 	utils.WriteJSON(w, http.StatusCreated, createdUser)
+}
+
+func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
+	// show function name to track error faster
+	logger := logrus.WithField("func", "user.go -> Login()")
+
+	var credantials model.Credantials
+	if err := json.NewDecoder(r.Body).Decode(&credantials); err != nil {
+		logger.WithError(err).Warn("could not decode parameters")
+		utils.WriteError(w, http.StatusBadRequest, "could not decode parameters", map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	logger = logger.WithFields(logrus.Fields{
+		"email": credantials.Email,
+	})
+
+	ctx := r.Context()
+	user, err := api.DB.GetUserByEmail(ctx, credantials.Email)
+	if err != nil {
+		logger.WithError(err).Warn("error login in")
+		utils.WriteError(w, http.StatusConflict, "invalid email or password", nil)
+		return
+	}
+
+	// Checking if password is correct
+	if err := user.CheckPassword(credantials.Password); err != nil {
+		logger.WithError(err).Warn("error login in")
+		utils.WriteError(w, http.StatusConflict, "invalid email or password", nil)
+		return
+	}
+
+	logger.WithField("userID", user.ID).Info("user login in")
+
+	utils.WriteJSON(w, http.StatusOK, user)
 }

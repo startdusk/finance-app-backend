@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"regexp"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,12 +20,17 @@ type User struct {
 	DeletedAt    *time.Time `json:"-" db:"deleted_at"`
 }
 
+// isEmail match email format
+var isEmail = regexp.MustCompile(`^([\w\.\_\-]{2,10})@(\w{1,}).([a-z]{2,4})$`)
+
 // Verify all required fields before create or update
 func (u *User) Verify() error {
 	if u.Email == nil || (u.Email != nil && len(*u.Email) == 0) {
-		return errors.New("Email is required")
+		return errors.New("email is required")
 	}
-
+	if !isEmail.MatchString(*u.Email) {
+		return errors.New("email is valid")
+	}
 	return nil
 }
 

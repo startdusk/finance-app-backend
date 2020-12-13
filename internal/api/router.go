@@ -21,5 +21,8 @@ func NewRouter(db database.Database) (http.Handler, error) {
 	//apiRouter.HandleFunc("/users", userAPI.Create).Methods(http.MethodGet) // list all user
 	//apiRouter.HandleFunc("/users/{userID}", userAPI.Create).Methods(http.MethodGet) // get user by id
 	//apiRouter.HandleFunc("/users/{userID}", userAPI.Create).Methods(http.MethodDelete) // delete user by id
+
+	apiRouter.HandleFunc("/login", userAPI.Login).Methods(http.MethodPost)
+
 	return router, nil
 }

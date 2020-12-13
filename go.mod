@@ -3,6 +3,7 @@ module github.com/startdusk/finance-app-backend
 go 1.15
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.2.0

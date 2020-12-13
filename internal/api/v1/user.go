@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/startdusk/finance-app-backend/internal/api/auth"
 	"github.com/startdusk/finance-app-backend/internal/api/utils"
 	"github.com/startdusk/finance-app-backend/internal/database"
 	"github.com/startdusk/finance-app-backend/internal/model"
@@ -14,6 +16,8 @@ import (
 // UserAPI - providers REST for users
 type UserAPI struct {
 	DB database.Database // will represent all database interface
+
+	Tokens auth.Tokens
 }
 
 type UserParameters struct {
@@ -78,7 +82,7 @@ func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("user created")
 
-	utils.WriteJSON(w, http.StatusCreated, createdUser)
+	api.writeTokenResponse(ctx, w, http.StatusCreated, createdUser, true)
 }
 
 func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
@@ -115,5 +119,37 @@ func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	logger.WithField("userID", user.ID).Info("user login in")
 
-	utils.WriteJSON(w, http.StatusOK, user)
+	api.writeTokenResponse(ctx, w, http.StatusOK, user, true)
+}
+
+type TokenResponse struct {
+	Token string      `json:"token"`
+	User  *model.User `json:"user,omitempty"`
+}
+
+func (api *UserAPI) writeTokenResponse(
+	ctx context.Context,
+	w http.ResponseWriter,
+	status int,
+	user *model.User,
+	cookie bool) {
+	// Issue token:
+	token, err := api.Tokens.IssueToken(model.Principal{UserID: user.ID})
+	if err != nil {
+		logrus.WithError(err).Warn("error issuing token")
+		utils.WriteError(w, http.StatusConflict, "error issuing token", nil)
+		return
+	}
+
+	// Write token response
+	tokenResponse := TokenResponse{
+		Token: token,
+		User:  user,
+	}
+
+	if cookie {
+		// later
+	}
+
+	utils.WriteJSON(w, status, tokenResponse)
 }

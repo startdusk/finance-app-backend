@@ -11,6 +11,9 @@ import (
 // UserID is identifier for User
 type UserID string
 
+// NilUserID is an empty UserID
+var NilUserID UserID
+
 // User is structure represent ther object
 type User struct {
 	ID           UserID     `json:"id,omitempty" db:"user_id"`

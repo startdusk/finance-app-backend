@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -16,13 +17,13 @@ import (
 // UserAPI - providers REST for users
 type UserAPI struct {
 	DB database.Database // will represent all database interface
-
-	Tokens auth.Tokens
 }
 
 type UserParameters struct {
 	model.User
-	Password string `json:"password"`
+	model.SessionData
+
+	Password string `json:"password"` // Password must be 8 characters or longer!
 }
 
 func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +83,7 @@ func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("user created")
 
-	api.writeTokenResponse(ctx, w, http.StatusCreated, createdUser, true)
+	api.writeTokenResponse(ctx, w, http.StatusCreated, createdUser, &userParameters.SessionData, true)
 }
 
 func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +98,8 @@ func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	fmt.Println(credantials.SessionData)
 
 	logger = logger.WithFields(logrus.Fields{
 		"email": credantials.Email,
@@ -119,23 +122,118 @@ func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	logger.WithField("userID", user.ID).Info("user login in")
 
-	api.writeTokenResponse(ctx, w, http.StatusOK, user, true)
+	api.writeTokenResponse(ctx, w, http.StatusOK, user, &credantials.SessionData, true)
+}
+
+func (api *UserAPI) Get(w http.ResponseWriter, r *http.Request) {
+	// show function name to track error faster
+	logger := logrus.WithField("func", "user.go -> Get()")
+
+	// it happend becouse we allow to continue to API event without token we will close it leter
+	principal := auth.GetPrincipal(r)
+
+	ctx := r.Context()
+	user, err := api.DB.GetUserByID(ctx, &principal.UserID)
+	if err != nil {
+		logger.WithError(err).Warn("error getting user")
+		utils.WriteError(w, http.StatusConflict, "error getting user", nil)
+		return
+	}
+
+	logger.WithField("userID", principal.UserID).Info("get user complete")
+
+	utils.WriteJSON(w, http.StatusOK, user)
+}
+
+// RefreshTokenRequest - Data user sned to get new access refresh tokens
+type RefreshTokenRequest struct {
+	RefreshToken string         `json:"refreshToken"`
+	DeviceID     model.DeviceID `json:"deviceID"`
+}
+
+func (api *UserAPI) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	// show function name to track error faster
+	logger := logrus.WithField("func", "user.go -> RefreshToken()")
+
+	// TODO: move this part to separate function
+	var request RefreshTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		logger.WithError(err).Warn("could not decode parameters")
+		utils.WriteError(w, http.StatusBadRequest, "could not decode parameters", map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	logger = logger.WithFields(logrus.Fields{
+		"DeviceID": request.DeviceID,
+	})
+
+	principal, err := auth.VerifyToken(request.RefreshToken)
+	if err != nil {
+		logger.WithError(err).Warn("error verifing refresh token")
+		utils.WriteError(w, http.StatusUnauthorized, "error verifing refresh token", nil)
+		return
+	}
+
+	// if token is valid we need to check if combination UserID - DeviceID Refresh Token exists in database
+	data := model.Session{
+		UserID:       principal.UserID,
+		DeviceID:     request.DeviceID,
+		RefreshToken: request.RefreshToken,
+	}
+
+	ctx := r.Context()
+	session, err := api.DB.GetSession(ctx, data)
+	if err != nil || session == nil {
+		logger.WithError(err).Warn("error session not exists")
+		utils.WriteError(w, http.StatusUnauthorized, "error session not exists", nil)
+		return
+	}
+
+	// if session exists and valid we generate new access and refresh tokens.
+	logger.WithField("userID", principal.UserID).Debug("refresh token")
+
+	// check if user exists
+	user, err := api.DB.GetUserByID(ctx, &principal.UserID)
+	if err != nil {
+		logger.WithError(err).Warn("error getting user")
+		utils.WriteError(w, http.StatusConflict, "error getting user", nil)
+		return
+	}
+	api.writeTokenResponse(ctx, w, http.StatusOK, user, &model.SessionData{DeviceID: request.DeviceID}, true)
 }
 
 type TokenResponse struct {
-	Token string      `json:"token"`
-	User  *model.User `json:"user,omitempty"`
+	Tokens *auth.Tokens `json:"tokens,omitempty"` // this will insert all tokens struct fields
+	User   *model.User  `json:"user,omitempty"`
 }
 
+// writeTokenResponse - Generate Access and Refresh token are return them to user. Refresh token is stored in database as session
 func (api *UserAPI) writeTokenResponse(
 	ctx context.Context,
 	w http.ResponseWriter,
 	status int,
 	user *model.User,
+	sessionData *model.SessionData,
 	cookie bool) {
 	// Issue token:
-	token, err := api.Tokens.IssueToken(model.Principal{UserID: user.ID})
-	if err != nil {
+	// TODO: add user role to Principal
+	tokens, err := auth.IssueToken(model.Principal{UserID: user.ID})
+	if err != nil && tokens == nil {
+		logrus.WithError(err).Warn("error issuing token")
+		utils.WriteError(w, http.StatusConflict, "error issuing token", nil)
+		return
+	}
+
+	session := model.Session{
+		UserID:       user.ID,
+		DeviceID:     sessionData.DeviceID,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresAt:    tokens.RefreshTokenExpiresAt, // 存储的refreshToken的过期时间，返回前端的是accessToken的时间
+	}
+
+	if err := api.DB.SaveRefreshToken(ctx, session); err != nil {
 		logrus.WithError(err).Warn("error issuing token")
 		utils.WriteError(w, http.StatusConflict, "error issuing token", nil)
 		return
@@ -143,8 +241,8 @@ func (api *UserAPI) writeTokenResponse(
 
 	// Write token response
 	tokenResponse := TokenResponse{
-		Token: token,
-		User:  user,
+		Tokens: tokens,
+		User:   user,
 	}
 
 	if cookie {

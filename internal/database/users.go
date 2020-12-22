@@ -54,7 +54,7 @@ func (d *database) CreateUser(ctx context.Context, user *model.User) error {
 var getUserByIDQuery = `
 	SELECT user_id, email, password_hash, created_at, deleted_at
 	FROM users 
-	WHERE user_id = $1;
+	WHERE user_id = $1 AND deleted_at IS NULL;
 `
 
 func (d *database) GetUserByID(ctx context.Context, userID *model.UserID) (*model.User, error) {
@@ -68,7 +68,7 @@ func (d *database) GetUserByID(ctx context.Context, userID *model.UserID) (*mode
 var getUserByEmailQuery = `
 	SELECT user_id, email, password_hash, created_at, deleted_at
 	FROM users 
-	WHERE email = $1;
+	WHERE email = $1 AND deleted_at IS NULL;
 `
 
 func (d *database) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {

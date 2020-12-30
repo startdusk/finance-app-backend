@@ -24,7 +24,14 @@ func NewRouter(db database.Database) (http.Handler, error) {
 	//apiRouter.HandleFunc("/users/{userID}", userAPI.Create).Methods(http.MethodDelete) // delete user by id
 
 	apiRouter.HandleFunc("/login", userAPI.Login).Methods(http.MethodPost)
+
+	// -----------TOKENS------------
 	apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost)
+
+	// -----------ROLES-------------
+	apiRouter.HandleFunc("/users/{userID}/roles", userAPI.GrantRole).Methods(http.MethodPost) // Create role
+	// apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost) // Revoke role
+	// apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost) // Get all role
 
 	router.Use(auth.AutherizationToken)
 

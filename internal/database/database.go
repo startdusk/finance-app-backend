@@ -66,12 +66,10 @@ func waitForDB(conn *sql.DB) error {
 		}
 	}()
 
-	for {
-		select {
-		case <-ready:
-			return nil
-		case <-time.After(time.Duration(*databaseTimeout) * time.Millisecond):
-			return errors.New("database not ready")
-		}
+	select {
+	case <-ready:
+		return nil
+	case <-time.After(time.Duration(*databaseTimeout) * time.Millisecond):
+		return errors.New("database not ready")
 	}
 }

@@ -10,6 +10,11 @@ import (
 	"github.com/startdusk/finance-app-backend/internal/model"
 )
 
+const (
+	authorizationHeader = "Authorization"
+	baererPrefix        = "bearer"
+)
+
 type principalContextKeyType struct{}
 
 var principalContextKey principalContextKeyType
@@ -51,13 +56,13 @@ func WithPrincipalContext(ctx context.Context, principal *model.Principal) conte
 }
 
 func GetToken(r *http.Request) (string, error) {
-	token := r.Header.Get("Authorization")
+	token := r.Header.Get(authorizationHeader)
 	if token == "" {
 		return "", nil
 	}
 
 	tokenParts := strings.SplitN(token, " ", 2)
-	if len(tokenParts) != 2 || strings.ToLower(tokenParts[0]) != "bearer" || len(tokenParts[1]) == 0 {
+	if len(tokenParts) != 2 || strings.ToLower(tokenParts[0]) != baererPrefix || len(tokenParts[1]) == 0 {
 		return "", errors.New("Autherization header format must be Bearer {token}")
 	}
 

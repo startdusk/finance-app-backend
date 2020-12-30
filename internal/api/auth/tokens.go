@@ -13,10 +13,10 @@ import (
 // verify jwt key
 var jwtKey = []byte("my_secret_key") // TODO: change key
 
-// var accessTokenDuration = time.Duration(30) * time.Minute    // 30 min
-var accessTokenDuration = time.Duration(60) * time.Second // TEST: we will get this token, try to get user, first time we should get one. we will wait for 1 miniute and try again. it should fail.
-// var refreshTokenDuration = time.Duration(30*24) * time.Hour // 30 days
-var refreshTokenDuration = time.Duration(120) * time.Second // TEST: after access token fails we send this token and it should return new one. we will wait 1 miniute and we should get expried error
+var accessTokenDuration = time.Duration(30) * time.Minute // 30 min
+// var accessTokenDuration = time.Duration(60) * time.Second // TEST: we will get this token, try to get user, first time we should get one. we will wait for 1 miniute and try again. it should fail.
+var refreshTokenDuration = time.Duration(30*24) * time.Hour // 30 days
+// var refreshTokenDuration = time.Duration(120) * time.Second // TEST: after access token fails we send this token and it should return new one. we will wait 1 miniute and we should get expried error
 
 type Claims struct {
 	UserID model.UserID `json:"userID"`

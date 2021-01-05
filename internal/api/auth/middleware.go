@@ -51,7 +51,7 @@ func CheckToken(r *http.Request) (*http.Request, error) {
 	return r.WithContext(WithPrincipalContext(r.Context(), principal)), nil
 }
 
-func WithPrincipalContext(ctx context.Context, principal *model.Principal) context.Context {
+func WithPrincipalContext(ctx context.Context, principal model.Principal) context.Context {
 	return context.WithValue(ctx, principalContextKey, principal)
 }
 
@@ -69,8 +69,8 @@ func GetToken(r *http.Request) (string, error) {
 	return tokenParts[1], nil
 }
 
-func GetPrincipal(r *http.Request) *model.Principal {
-	if principal, ok := r.Context().Value(principalContextKey).(*model.Principal); ok {
+func GetPrincipal(r *http.Request) model.Principal {
+	if principal, ok := r.Context().Value(principalContextKey).(model.Principal); ok {
 		return principal
 	}
 

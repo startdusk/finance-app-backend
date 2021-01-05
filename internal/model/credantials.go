@@ -20,7 +20,7 @@ type Principal struct {
 }
 
 // NilPrincipal is an uninitialized Principal
-var NilPrincipal *Principal
+var NilPrincipal Principal
 
 func (p Principal) String() string {
 	if p.UserID != "" {

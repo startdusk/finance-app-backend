@@ -10,7 +10,16 @@ import (
 	"github.com/startdusk/finance-app-backend/internal/database"
 )
 
+type API struct {
+	Path            string
+	Method          string
+	Func            http.HandlerFunc
+	permissionTypes []auth.PermissionType
+}
+
 func NewRouter(db database.Database) (http.Handler, error) {
+	permissions := auth.NewPermissions(db)
+
 	router := mux.NewRouter()
 	router.HandleFunc("/version", v1.VersionHandler)
 
@@ -18,22 +27,49 @@ func NewRouter(db database.Database) (http.Handler, error) {
 	userAPI := &v1.UserAPI{
 		DB: db,
 	}
-	apiRouter.HandleFunc("/users", userAPI.Create).Methods(http.MethodPost)
-	//apiRouter.HandleFunc("/users", userAPI.Create).Methods(http.MethodGet) // list all user
-	apiRouter.HandleFunc("/users/{userID}", userAPI.Get).Methods(http.MethodGet) // get user by id
-	//apiRouter.HandleFunc("/users/{userID}", userAPI.Create).Methods(http.MethodDelete) // delete user by id
 
-	apiRouter.HandleFunc("/login", userAPI.Login).Methods(http.MethodPost)
+	accountAPI := &v1.AccountAPI{
+		DB: db,
+	}
 
-	// -----------TOKENS------------
-	apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost)
+	apis := []API{
+		// ---------------USER-------------------
+		NewAPI("/users", http.MethodPost, userAPI.Create, auth.Any),                             // Create user
+		NewAPI("/users/{userID}", http.MethodGet, userAPI.Get, auth.Admin, auth.MemberIsTarget), // get user by id
+		// NewAPI("/users/{userID}", http.MethodGet, userAPI.Get, auth.Admin, auth.MemberIsTarget), // list all user
+		// NewAPI("/users/{userID}", http.MethodGet, userAPI.Get, auth.Admin, auth.MemberIsTarget), // delete user by id
+		NewAPI("/login", http.MethodPost, userAPI.Login, auth.Any), // Login user
 
-	// -----------ROLES-------------
-	apiRouter.HandleFunc("/users/{userID}/roles", userAPI.GrantRole).Methods(http.MethodPost) // Create role
-	// apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost) // Revoke role
-	// apiRouter.HandleFunc("/refresh", userAPI.RefreshToken).Methods(http.MethodPost) // Get all role
+		// ---------------TOKENS------------------
+		NewAPI("/refresh", http.MethodPost, userAPI.RefreshToken, auth.Any), // Refresh token
+
+		// ---------------ROLES-------------------
+		NewAPI("/users/{userID}/roles", http.MethodPost, userAPI.GrantRole, auth.Admin),    // Create role
+		NewAPI("/users/{userID}/roles", http.MethodDelete, userAPI.RevokeRole, auth.Admin), // Revoke role
+		NewAPI("/users/{userID}/roles", http.MethodGet, userAPI.GetRoleList, auth.Admin),   // Get all role
+
+		// ---------------ACCOUNTS----------------
+		NewAPI("/users/{userID}/accounts", http.MethodPost, accountAPI.Create, auth.Admin, auth.MemberIsTarget),               // create account for user (Open for admin for now)
+		NewAPI("/users/{userID}/accounts", http.MethodGet, accountAPI.List, auth.Admin, auth.MemberIsTarget),                  // get accounts for user (Open for admin for now)
+		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodPatch, accountAPI.Update, auth.Admin, auth.MemberIsTarget),  // update account for user (Open for admin for now)
+		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodGet, accountAPI.Get, auth.Admin, auth.MemberIsTarget),       // get account by account id for user (Open for admin for now)
+		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodDelete, accountAPI.Delete, auth.Admin, auth.MemberIsTarget), // delete account by account id for user (Open for admin for now)
+	}
+
+	for _, api := range apis {
+		apiRouter.HandleFunc(api.Path, permissions.Wrap(api.Func, api.permissionTypes...)).Methods(api.Method)
+	}
 
 	router.Use(auth.AutherizationToken)
 
 	return router, nil
+}
+
+func NewAPI(path string, method string, handlerFunc http.HandlerFunc, permissionTypes ...auth.PermissionType) API {
+	return API{
+		Path:            path,
+		Method:          method,
+		Func:            handlerFunc,
+		permissionTypes: permissionTypes,
+	}
 }

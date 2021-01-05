@@ -82,7 +82,7 @@ func generateToken(principal model.Principal, duration time.Duration) (string, i
 	return tokenString, claims.ExpiresAt, nil
 }
 
-func VerifyToken(token string) (*model.Principal, error) {
+func VerifyToken(token string) (model.Principal, error) {
 	claims := &Claims{}
 	tkn, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
@@ -90,19 +90,19 @@ func VerifyToken(token string) (*model.Principal, error) {
 
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			return nil, err
+			return model.NilPrincipal, err
 		}
 
-		return nil, err
+		return model.NilPrincipal, err
 	}
 
-	principal := &model.Principal{
+	principal := model.Principal{
 		UserID: claims.UserID,
 	}
 
 	// we want to return principal even token invalid becase we need to get userID
 	if !tkn.Valid {
-		return nil, err
+		return model.NilPrincipal, err
 	}
 
 	return principal, nil

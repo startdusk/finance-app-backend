@@ -3,9 +3,9 @@ package v1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
 	"github.com/startdusk/finance-app-backend/internal/api/auth"
@@ -43,7 +43,15 @@ func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
 		"email": *userParameters.Email,
 	})
 
-	if err := userParameters.Verify(); err != nil {
+	if err := userParameters.User.Verify(); err != nil {
+		logger.WithError(err).Warn("not all fields found") // I will hide this error in future, it isn't secure to show what fields are missing...
+		utils.WriteError(w, http.StatusBadRequest, "not all fields found", map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if err := userParameters.SessionData.Verify(); err != nil {
 		logger.WithError(err).Warn("not all fields found")
 		utils.WriteError(w, http.StatusBadRequest, "not all fields found", map[string]string{
 			"error": err.Error(),
@@ -81,7 +89,7 @@ func (api *UserAPI) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Info("user created")
+	logger.WithField("userID", createdUser.ID).Info("user created")
 
 	api.writeTokenResponse(ctx, w, http.StatusCreated, createdUser, &userParameters.SessionData, true)
 }
@@ -99,7 +107,13 @@ func (api *UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(credantials.SessionData)
+	if err := credantials.SessionData.Verify(); err != nil {
+		logger.WithError(err).Warn("not all fields found")
+		utils.WriteError(w, http.StatusBadRequest, "not all fields found", map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
 
 	logger = logger.WithFields(logrus.Fields{
 		"email": credantials.Email,
@@ -129,18 +143,18 @@ func (api *UserAPI) Get(w http.ResponseWriter, r *http.Request) {
 	// show function name to track error faster
 	logger := logrus.WithField("func", "user.go -> Get()")
 
-	// it happend becouse we allow to continue to API event without token we will close it leter
-	principal := auth.GetPrincipal(r)
+	vars := mux.Vars(r)
+	userID := model.UserID(vars["userID"])
 
 	ctx := r.Context()
-	user, err := api.DB.GetUserByID(ctx, &principal.UserID)
+	user, err := api.DB.GetUserByID(ctx, &userID)
 	if err != nil {
 		logger.WithError(err).Warn("error getting user")
 		utils.WriteError(w, http.StatusConflict, "error getting user", nil)
 		return
 	}
 
-	logger.WithField("userID", principal.UserID).Info("get user complete")
+	logger.WithField("userID", user.ID).Info("get user complete")
 
 	utils.WriteJSON(w, http.StatusOK, user)
 }

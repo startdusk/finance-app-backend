@@ -66,7 +66,7 @@ func (api *AccountAPI) Create(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, &account)
 }
 
-// PATCH - /users/{userID}/accounts
+// PATCH - /users/{userID}/accounts/{accountID}
 // Permission - MemberIsTarget
 func (api *AccountAPI) Update(w http.ResponseWriter, r *http.Request) {
 	// show function name to track error faster
@@ -150,7 +150,7 @@ func (api *AccountAPI) List(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	accounts, err := api.DB.ListAccountByUserID(ctx, userID)
+	accounts, err := api.DB.ListAccountsByUserID(ctx, userID)
 	if err != nil {
 		logger.WithError(err).Warn("error getting accounts")
 		utils.WriteError(w, http.StatusConflict, "error getting accounts", nil)

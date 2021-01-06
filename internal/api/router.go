@@ -32,6 +32,10 @@ func NewRouter(db database.Database) (http.Handler, error) {
 		DB: db,
 	}
 
+	categoryAPI := &v1.CategoryAPI{
+		DB: db,
+	}
+
 	apis := []API{
 		// ---------------USER-------------------
 		NewAPI("/users", http.MethodPost, userAPI.Create, auth.Any),                             // Create user
@@ -54,6 +58,13 @@ func NewRouter(db database.Database) (http.Handler, error) {
 		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodPatch, accountAPI.Update, auth.Admin, auth.MemberIsTarget),  // update account for user (Open for admin for now)
 		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodGet, accountAPI.Get, auth.Admin, auth.MemberIsTarget),       // get account by account id for user (Open for admin for now)
 		NewAPI("/users/{userID}/accounts/{accountID}", http.MethodDelete, accountAPI.Delete, auth.Admin, auth.MemberIsTarget), // delete account by account id for user (Open for admin for now)
+
+		// ---------------CATEGORIES----------------
+		NewAPI("/users/{userID}/categories", http.MethodPost, categoryAPI.Create, auth.Admin, auth.MemberIsTarget),                // create category for user (Open for admin for now)
+		NewAPI("/users/{userID}/categories", http.MethodGet, categoryAPI.List, auth.Admin, auth.MemberIsTarget),                   // get category for user (Open for admin for now)
+		NewAPI("/users/{userID}/categories/{categoryID}", http.MethodPatch, categoryAPI.Update, auth.Admin, auth.MemberIsTarget),  // update category for user (Open for admin for now)
+		NewAPI("/users/{userID}/categories/{categoryID}", http.MethodGet, categoryAPI.Get, auth.Admin, auth.MemberIsTarget),       // get category by category id for user (Open for admin for now)
+		NewAPI("/users/{userID}/categories/{categoryID}", http.MethodDelete, categoryAPI.Delete, auth.Admin, auth.MemberIsTarget), // delete category by category id for user (Open for admin for now)
 	}
 
 	for _, api := range apis {

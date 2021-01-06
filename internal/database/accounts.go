@@ -12,7 +12,7 @@ type AccountDB interface {
 	CreateAccount(ctx context.Context, account *model.Account) error
 	UpdateAccount(ctx context.Context, account *model.Account) error
 	GetAccountByID(ctx context.Context, accountID model.AccountID) (*model.Account, error)
-	ListAccountByUserID(ctx context.Context, userID model.UserID) ([]*model.Account, error)
+	ListAccountsByUserID(ctx context.Context, userID model.UserID) ([]*model.Account, error)
 	DeleteAccount(ctx context.Context, accountID model.AccountID) (bool, error)
 }
 
@@ -81,7 +81,7 @@ var listAccountByUserIDQuery = `
 	WHERE user_id = $1 AND deleted_at IS NULL;
 `
 
-func (d *database) ListAccountByUserID(ctx context.Context, userID model.UserID) ([]*model.Account, error) {
+func (d *database) ListAccountsByUserID(ctx context.Context, userID model.UserID) ([]*model.Account, error) {
 	var accounts []*model.Account
 	if err := d.conn.SelectContext(ctx, &accounts, listAccountByUserIDQuery, userID); err != nil {
 		return nil, errors.Wrap(err, "could not get user's accounts")

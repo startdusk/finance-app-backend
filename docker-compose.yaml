@@ -6,6 +6,8 @@ services:
       - 5432:5432
     environment:
       POSTGRES_PASSWORD: password
+      TZ: 'GMT+2'
+      PGTZ: 'GMT+2'
   server:
     build: .
     links:

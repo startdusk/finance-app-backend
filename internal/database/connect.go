@@ -15,6 +15,7 @@ type Database interface {
 	SessionDB
 	UserRoleDB
 	AccountDB
+	CategoryDB
 
 	io.Closer
 }

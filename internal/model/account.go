@@ -33,23 +33,23 @@ type Account struct {
 
 func (a *Account) Verify() error {
 	if a.UserID == nil || len(*a.UserID) == 0 {
-		return errors.New("UserID is required")
+		return errors.New("userID is required")
 	}
 
 	if a.Name == nil || len(*a.Name) == 0 {
-		return errors.New("Name is required")
+		return errors.New("name is required")
 	}
 
 	if a.Type == nil || len(*a.Type) == 0 {
-		return errors.New("Type is required")
+		return errors.New("type is required")
 	}
 
 	if a.StartBalance == nil {
-		return errors.New("StartBalance is required")
+		return errors.New("startBalance is required")
 	}
 
 	if a.Currency == nil || len(*a.Currency) == 0 {
-		return errors.New("Currency is required")
+		return errors.New("currency is required")
 	}
 
 	return nil

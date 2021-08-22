@@ -16,7 +16,7 @@ type AccountDB interface {
 	DeleteAccount(ctx context.Context, accountID model.AccountID) (bool, error)
 }
 
-var createAccountQuery = `
+const createAccountQuery = `
 	INSERT INTO accounts (user_id, start_balance, account_type, account_name, currency) 
 		VALUES (:user_id, :start_balance, :account_type, :account_name, :currency) 
 	RETURNING account_id;
@@ -37,7 +37,7 @@ func (d *database) CreateAccount(ctx context.Context, account *model.Account) er
 	return nil
 }
 
-var updateAccountQuery = `
+const updateAccountQuery = `
 	UPDATE accounts 
 	SET start_balance = :start_balance, 
 		account_type = :account_type,
@@ -60,7 +60,7 @@ func (d *database) UpdateAccount(ctx context.Context, account *model.Account) er
 	return nil
 }
 
-var getAccountByIDQuery = `
+const getAccountByIDQuery = `
 	SELECT account_id, user_id, start_balance, account_type, account_name, currency, created_at, deleted_at 
 	FROM accounts 
 	WHERE account_id = $1;
@@ -75,7 +75,7 @@ func (d *database) GetAccountByID(ctx context.Context, accountID model.AccountID
 	return &account, nil
 }
 
-var listAccountByUserIDQuery = `
+const listAccountByUserIDQuery = `
 	SELECT account_id, user_id, start_balance, account_type, account_name, currency, created_at, deleted_at 
 	FROM accounts 
 	WHERE user_id = $1 AND deleted_at IS NULL;
@@ -91,7 +91,7 @@ func (d *database) ListAccountsByUserID(ctx context.Context, userID model.UserID
 }
 
 // we don't delete records from database we want them as deleted by setting deleted_at time
-var deleteAccountQuery = `
+const deleteAccountQuery = `
 	UPDATE accounts 
 	SET deleted_at = NOW() 
 	WHERE account_id = $1;

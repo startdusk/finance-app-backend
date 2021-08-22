@@ -14,6 +14,6 @@ vet-code:
 
 # docker build 前先清空之前生成错误的image签TAG为<none>的容器
 clear-none-docker-image:
-	#删除所有exit的容器，运行中的不会被删除
+	# 删除所有exit的容器，运行中的不会被删除
 	docker rm $(docker ps -a -q) 
 	docker rmi $(docker images -f "dangling=true" -q)

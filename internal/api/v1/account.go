@@ -18,6 +18,24 @@ type AccountAPI struct {
 	DB database.Database // will represent all database interface
 }
 
+func SetAccountAPI(db database.Database, router *mux.Router, permissions auth.Permissions) {
+	api := &AccountAPI{
+		DB: db,
+	}
+
+	apis := []API{
+		NewAPI(http.MethodPost, "/users/{userID}/accounts", api.Create, auth.Admin, auth.MemberIsTarget),               // create account for user (Open for admin for now)
+		NewAPI(http.MethodGet, "/users/{userID}/accounts", api.List, auth.Admin, auth.MemberIsTarget),                  // get account for user (Open for admin for now)
+		NewAPI(http.MethodPatch, "/users/{userID}/accounts/{accountID}", api.Update, auth.Admin, auth.MemberIsTarget),  // update account for user (Open for admin for now)
+		NewAPI(http.MethodGet, "/users/{userID}/accounts/{accountID}", api.Get, auth.Admin, auth.MemberIsTarget),       // get account by account id for user (Open for admin for now)
+		NewAPI(http.MethodDelete, "/users/{userID}/accounts/{accountID}", api.Delete, auth.Admin, auth.MemberIsTarget), // delete account by account id for user (Open for admin for now)
+	}
+
+	for _, api := range apis {
+		router.HandleFunc(api.Path, permissions.Wrap(api.Func, api.permissionTypes...)).Methods(api.Method)
+	}
+}
+
 // POST - /users/{userID}/accounts
 // Permission - MemberIsTarget
 func (api *AccountAPI) Create(w http.ResponseWriter, r *http.Request) {

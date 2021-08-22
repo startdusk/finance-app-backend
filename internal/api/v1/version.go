@@ -34,6 +34,6 @@ func init() {
 func VersionHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(versionJSON); err != nil {
-		logrus.WithError(err).Debug("Error writing version")
+		logrus.WithError(err).Debug("error writing version")
 	}
 }

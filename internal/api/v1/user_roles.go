@@ -9,10 +9,32 @@ import (
 
 	"github.com/startdusk/finance-app-backend/internal/api/auth"
 	"github.com/startdusk/finance-app-backend/internal/api/utils"
+	"github.com/startdusk/finance-app-backend/internal/database"
 	"github.com/startdusk/finance-app-backend/internal/model"
 )
 
-func (api *UserAPI) GrantRole(w http.ResponseWriter, r *http.Request) {
+// UserRoleAPI - providers REST for user role
+type UserRoleAPI struct {
+	DB database.Database
+}
+
+func SetUserRoleAPI(db database.Database, router *mux.Router, permissions auth.Permissions) {
+	api := &UserRoleAPI{
+		DB: db,
+	}
+
+	apis := []API{
+		NewAPI(http.MethodPost, "/users/{userID}/roles", api.GrantRole, auth.Admin),    // Create role
+		NewAPI(http.MethodDelete, "/users/{userID}/roles", api.RevokeRole, auth.Admin), // Revoke role
+		NewAPI(http.MethodGet, "/users/{userID}/roles", api.GetRoleList, auth.Admin),   // Get all role
+	}
+
+	for _, api := range apis {
+		router.HandleFunc(api.Path, permissions.Wrap(api.Func, api.permissionTypes...)).Methods(api.Method)
+	}
+}
+
+func (api *UserRoleAPI) GrantRole(w http.ResponseWriter, r *http.Request) {
 	logger := logrus.WithField("func", "user.go -> GrantRole()")
 
 	vars := mux.Vars(r)
@@ -49,7 +71,7 @@ func (api *UserAPI) GrantRole(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (api *UserAPI) RevokeRole(w http.ResponseWriter, r *http.Request) {
+func (api *UserRoleAPI) RevokeRole(w http.ResponseWriter, r *http.Request) {
 	logger := logrus.WithField("func", "user.go -> RevokeRole()")
 
 	vars := mux.Vars(r)
@@ -86,7 +108,7 @@ func (api *UserAPI) RevokeRole(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (api *UserAPI) GetRoleList(w http.ResponseWriter, r *http.Request) {
+func (api *UserRoleAPI) GetRoleList(w http.ResponseWriter, r *http.Request) {
 	logger := logrus.WithField("func", "user.go -> GetRoleList()")
 
 	vars := mux.Vars(r)

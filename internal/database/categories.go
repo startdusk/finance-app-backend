@@ -16,7 +16,7 @@ type CategoryDB interface {
 	DeleteCategory(ctx context.Context, categoryID model.CategoryID) (bool, error)
 }
 
-var createCategoryQuery = `
+const createCategoryQuery = `
 	INSERT INTO categories (parent_id, user_id, name) 
 		VALUES (:parent_id, :user_id, :name) 
 	RETURNING category_id;
@@ -37,7 +37,7 @@ func (d *database) CreateCategory(ctx context.Context, category *model.Category)
 	return nil
 }
 
-var updateCategoryQuery = `
+const updateCategoryQuery = `
 	UPDATE categories 
 	SET parent_id = :parent_id, 
 		name = :name 
@@ -58,7 +58,7 @@ func (d *database) UpdateCategory(ctx context.Context, category *model.Category)
 	return nil
 }
 
-var getCategoryByIDQuery = `
+const getCategoryByIDQuery = `
 	SELECT category_id, parent_id, user_id, name, created_at, deleted_at 
 	FROM categories  
 	WHERE category_id = $1 AND deleted_at IS NULL;
@@ -73,7 +73,7 @@ func (d *database) GetCategoryByID(ctx context.Context, categoryID model.Categor
 	return &category, nil
 }
 
-var listCategoryByUserIDQuery = `
+const listCategoryByUserIDQuery = `
 	SELECT category_id, parent_id, user_id, name, created_at, deleted_at 
 	FROM categories  
 	WHERE user_id = $1 AND deleted_at IS NULL;
@@ -89,7 +89,7 @@ func (d *database) ListCategoriesByUserID(ctx context.Context, userID model.User
 }
 
 // we don't delete records from database we want them as deleted by setting deleted_at time
-var deleteCategoryQuery = `
+const deleteCategoryQuery = `
 	UPDATE categories  
 	SET deleted_at = NOW() 
 	WHERE category_id = $1;

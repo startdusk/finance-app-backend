@@ -14,7 +14,7 @@ type UserRoleDB interface {
 	GetRolesByUser(ctx context.Context, userID model.UserID) ([]*model.UserRole, error)
 }
 
-var grantUserRoleQuery = `
+const grantUserRoleQuery = `
 	INSERT INTO user_roles (user_id, role) 
 		VALUES ($1, $2);
 `
@@ -27,7 +27,7 @@ func (d *database) GrantRole(ctx context.Context, userID model.UserID, role mode
 	return nil
 }
 
-var revokeUserRoleQuery = `
+const revokeUserRoleQuery = `
 	DELETE FROM user_roles 
 		WHERE user_id = $1 AND role = $2;
 `
@@ -40,7 +40,7 @@ func (d *database) RevokeRole(ctx context.Context, userID model.UserID, role mod
 	return nil
 }
 
-var getRolesByUserIDQuery = `
+const getRolesByUserIDQuery = `
 	SELECT role 
 	FROM user_roles 
 	WHERE user_id = $1;

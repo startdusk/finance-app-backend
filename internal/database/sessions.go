@@ -11,7 +11,7 @@ type SessionDB interface {
 	GetSession(ctx context.Context, session model.Session) (*model.Session, error)
 }
 
-var insertOrUpdateSession = `
+const insertOrUpdateSession = `
 	INSERT INTO sessions (user_id, device_id, refresh_token, expires_at) 
 	VALUES (:user_id, :device_id, :refresh_token, :expires_at) 
 
@@ -29,7 +29,7 @@ func (d *database) SaveRefreshToken(ctx context.Context, session model.Session) 
 	return nil
 }
 
-var getSessionQuery = `
+const getSessionQuery = `
 	SELECT user_id, device_id, refresh_token, expires_at 
 	FROM sessions 
 	WHERE user_id = $1 

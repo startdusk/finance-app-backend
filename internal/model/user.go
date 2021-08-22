@@ -32,7 +32,7 @@ func (u *User) Verify() error {
 		return errors.New("email is required")
 	}
 	if !isEmail.MatchString(*u.Email) {
-		return errors.New("email is valid")
+		return errors.New("email invalid")
 	}
 	return nil
 }

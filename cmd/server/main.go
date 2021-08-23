@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 
 	_ "github.com/lib/pq"
@@ -10,6 +11,11 @@ import (
 	"github.com/startdusk/finance-app-backend/internal/api"
 	"github.com/startdusk/finance-app-backend/internal/config"
 	"github.com/startdusk/finance-app-backend/internal/database"
+)
+
+var (
+	host = flag.String("host", "0.0.0.0", "host for listen")
+	port = flag.String("port", "8088", "port for listen")
 )
 
 // Create Server object and listener
@@ -32,7 +38,7 @@ func main() {
 
 	logrus.Debug("Database is ready to use")
 
-	const addr = "0.0.0.0:8088"
+	var addr = net.JoinHostPort(*host, *port)
 	server := http.Server{
 		Handler: router,
 		Addr:    addr,
